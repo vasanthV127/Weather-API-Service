@@ -1,6 +1,5 @@
 package com.example.weather_api.service;
 
-
 import com.example.weather_api.exception.RateLimitException;
 import com.example.weather_api.model.CurrentWeather;
 import com.example.weather_api.model.Forecast;
@@ -8,7 +7,6 @@ import com.example.weather_api.model.Location;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
@@ -36,6 +34,7 @@ public class WeatherAggregationService {
 
     @Cacheable(value = "currentWeather", key = "#location")
     public CurrentWeather getAggregatedCurrent(String location) {
+        log.debug("Cache miss for location: {}", location); // Before API calls
         Location loc = getFirstLocation(location);
         if (loc == null) {
             throw new RuntimeException("Location not found");
@@ -55,6 +54,7 @@ public class WeatherAggregationService {
             aggregated.setTemperature((meteo.getTemperature() + owm.getTemperature()) / 2);
             aggregated.setHumidity((meteo.getHumidity() + owm.getHumidity()) / 2);
             aggregated.setConditions(owm.getConditions());  // Prefer OWM string description
+            log.debug("Cache hit or new entry for location: {}", location); // After aggregation
             log.debug("Aggregated current weather for {}: {}", location, aggregated);
             return aggregated;
         } catch (Exception e) {
